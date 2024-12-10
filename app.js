@@ -1,62 +1,59 @@
-const express = require('express');
-const multer = require('multer');
-const csv = require('csv-parser');
-const path = require('path');
-const fs = require('fs');
+const express = require("express");
+const multer = require("multer");
+const csv = require("csv-parser");
+const path = require("path");
+const fs = require("fs");
 
 const app = express();
-const upload = multer({ dest: 'uploads/' });
+const upload = multer({ dest: "uploads/" });
 
 // Endpoint para cargar el archivo CSV
-app.post('/upload', upload.single('file'), (req, res) => {
+app.post("/upload", upload.single("file"), (req, res) => {
   const filePath = path.join(__dirname, req.file.path);
   const results = [];
   let idCounter = 1; // Contador para el campo "id"
 
   fs.createReadStream(filePath)
     .pipe(csv())
-    .on('data', (row) => {
+    .on("data", (row) => {
       const {
-        Desc,
+        desc,
         cod,
         cost,
         price,
         priceA,
         priceB,
         priceC,
-        PSMin,
-        PPSMax,
-        Fabriacante,
-        Ubicación,
         provider,
         cat,
-        Unidad,
-        Sucursal
-      } = row; // Ajusta los nombres de columnas según tu CSV
+        quantity,
+        entry,
+        exit,
+      } = row;
 
-      // Crear objeto con la estructura deseada
       const item = {
-        id: idCounter++,
-        name: Desc,
-        code: cod,
+        id: idCounter,
+        name: desc,
+        code: idCounter++,
         cat: cat,
         provider: provider,
-        cost: parseFloat(cost.replace('$', '')),
-        price: parseFloat(price.replace('$', '')),
-        priceA: parseFloat(priceA.replace('$', '')),
-        priceB: parseFloat(priceB.replace('$', '')),
-        priceC: parseFloat(priceC.replace('$', ''))
+        cost: parseFloat(cost.replace("$", "")) || 0,
+        price: parseFloat(price.replace("$", "")) || 0,
+        priceA: parseFloat(priceA.replace("$", "")) || 0,
+        priceB: parseFloat(priceB.replace("$", "")) || 0,
+        priceC: parseFloat(priceC.replace("$", "")) || 0,
+        stock: parseFloat(quantity) || 0,
       };
 
       results.push(item);
     })
-    .on('end', () => {
-      fs.unlinkSync(filePath); // Elimina el archivo temporal
-      res.status(200).json(results); // Devuelve el arreglo de objetos en la respuesta
+    .on("end", () => {
+      fs.unlinkSync(filePath);
+      res.status(200).json(results);
     })
-    .on('error', (err) => {
-      console.error('Error al leer el archivo CSV:', err);
-      res.status(500).json({ error: 'Error al procesar el archivo CSV' });
+    .on("error", (err) => {
+      console.error("Error al leer el archivo CSV:", err);
+      res.status(500).json({ error: "Error al procesar el archivo CSV" });
     });
 });
 
